@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Mason's todo list</title>
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://bootswatch.com/united/bootstrap.min.css" crossorigin="anonymous">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Mason's todo list</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="#">About</a>
+                    </li>
+                    <li>
+                        <a href="#">Contact</a>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right" id="adminbar" style="display: none;">
+                    <li>
+                    	<a href="/admin.html">Admin Area</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+<div style="position: fixed; top: 0.5em; right: 0.5em; z-index: 9001;" id="notificationarea">
+</div>
+
+    <!-- Page Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1>Mason's todo list</h1>
+                <div>
+                    <p>This is a public listing of Mason's to-do items.</p>
+                    <p>Some of the listings require authorization to view, and some others are also encrypted.</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <h2>Authentication</h2>
+                <div>If a to-do item is encrypted, it will show up with a title of question marks and the more info modal will have a password box to decrypt it. Otherwise, username and password authentication is available to access items that require it.</div>
+            </div>
+            <div class="col-lg-6" id="need-login">
+                <h2></h2>
+                <div class="alert alert-danger" role="alert" id="login-error" style="display:none"></div>
+                <br />
+                <br />
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon1"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></span>
+                    <input type="text" class="form-control loginformcontrol" placeholder="Username" aria-describedby="basic-addon1" id="login-username">
+                </div>
+                <br />
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon2"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></span>
+                    <input type="password" class="form-control loginformcontrol" placeholder="Password" aria-describedby="basic-addon2" id="login-password">
+                </div>
+                <br />
+                <div class="text-right">
+                    <a class="btn btn-primary" href="#" role="button" id="need-login-authbtn">Authenticate</a>
+                </div>
+            </div>
+            <div class="col-lg-6" id="need-logout" style="display: none;">
+            	<h2></h2>
+            	<br />
+            	<br />
+            	You are logged in as <b id="login-username-name">xX_GenericUsername_Xx</b>. (User id <b id="login-username-id">9001</b>)<br />
+            	<br />
+                <div class="text-right">
+                    <a class="btn btn-success" href="#" role="button" id="create-todo" data-toggle="modal" data-target="#editModal">Create a todo item</a>
+                    <a class="btn btn-primary" href="#" role="button" id="need-logout-logoutbtn">Log out</a>
+                </div>
+            </div>
+        </div> 
+        <div class="row">
+            <div class="col-lg-3">
+                <h2>Ideas</h2>
+                <p>Ideas for possible projects.</p>
+				<div class="list-group" id="todo-type-0">
+				</div>
+            </div>
+            <div class="col-lg-3">
+                <h2>In progress</h2>
+                <p>Things that I am currently working on.</p>
+                <div class="list-group" id="todo-type-1">
+				</div>
+            </div>
+            <div class="col-lg-3">
+                <h2>Doing soon</h2>
+                <p>Projects that I am planning on doing.</p>
+                <div class="list-group" id="todo-type-2">
+				</div>
+            </div>
+            <div class="col-lg-3">
+                <h2>Paused</h2>
+                <p>Projects that have been paused.</p>
+                <div class="list-group" id="todo-type-3">
+				</div>
+            </div>
+        </div>
+        <!-- /.row -->
+
+    </div>
+    <!-- /.container -->
+    
+    <div class="modal fade" id="myModal" role="dialog">
+    	<div class="modal-dialog">
+    	<!-- Modal content-->
+    		<div class="modal-content">
+        		<div class="modal-header">
+          			<button type="button" class="close" data-dismiss="modal">&times;</button>
+          			<h4 class="modal-title" id="todo-moretitle">Name</h4>
+        		</div>
+        		<div class="modal-body">
+          			<p id="todo-moreinfo"></p>
+        		</div>
+        		<div class="modal-footer">
+          			<button type="button" id="editbtn" class="btn btn-info" data-dismiss="modal">Edit</button>
+          			<button type="button" class="btn btn-success" data-dismiss="modal">Done</button>
+        		</div>
+      		</div>
+    	</div>
+    </div>
+    <div class="modal fade" id="editModal" role="dialog">
+    	<div class="modal-dialog">
+    	<!-- Modal content-->
+    		<div class="modal-content">
+        		<div class="modal-header">
+          			<button type="button" class="close" data-dismiss="modal">&times;</button>
+          			<input class="modal-title form-control" id="edit-title" value="asdf" />
+        		</div>
+        		<div class="modal-body">
+          			<textarea id="edit-contents" class="form-control">asdf</textarea><br />
+<select id="edit-state" class="form-control">
+    <option value="0">Idea</option>
+    <option value="1">In Progress</option>
+    <option value="2">Doing soon</option>
+    <option value="3">Paused</option>
+ </select>
+<div class="checkbox">
+  <label><input type="checkbox" value="yes" id="edit-ispublic">Public</label>
+</div>
+        		</div>
+        		<div class="modal-footer">
+          			<button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+          			<button type="button" class="btn btn-danger" onclick="deleteTodo()">Delete</button>
+          			<button type="button" class="btn btn-info" id="saveBtn" onclick="saveTodo()">Save</button>
+        		</div>
+      		</div>
+    	</div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script>
+var isLogin = false;
+var isAdmin = false;
+var myID = 0;
+var editTodoID = 0;
+
+var allTodos;
+var currTodo;
+
+function addAlert(msg) {
+var theID = Math.floor(Math.random() * 10000);
+
+document.getElementById("notificationarea").innerHTML += '<div class="alert alert-danger" role="alert" id="alert-' + theID +'">'+msg+'</div>';
+setTimeout(function() {
+var element = document.getElementById("alert-"+theID);
+element.parentNode.removeChild(element);
+}, 3000);
+}
+
+function saveTodo() {
+$.post("/update_todo.php",
+{id: editTodoID, name:document.getElementById("edit-title").value, desc: document.getElementById("edit-contents").value, public: document.getElementById("edit-ispublic").checked, update_security: document.getElementById("edit-ispublic").checked, state: document.getElementById("edit-state").value},
+function(str, error) {
+var result = str;
+if (result.msg.indexOf("error") < 0) {
+$('#editModal').modal('hide');
+updateTodos();
+} else {
+addAlert("Failed to save your edits.<br />Check if you have permissions to edit this item.");
+}
+});
+}
+
+function deleteTodo() {
+$.post("/delete_todo.php",
+{id: editTodoID},
+function(str, error) {
+var result = str;
+if (result.msg.indexOf("error") < 0) {
+$('#editModal').modal('hide');
+updateTodos();
+} else {
+addAlert("Failed to delete todo.<br />Check if you have permissions to edit this item.");
+}
+});
+}
+
+function editTodo(id) {
+if (id != -1 && id != currTodo.id) {
+moreInfo(id);
+return;
+}
+document.getElementById("edit-title").value = currTodo.name;
+document.getElementById("edit-contents").value = currTodo.desc;
+document.getElementById("edit-state").value = currTodo.state;
+editTodoID = id;
+$('#editModal').modal('show');
+}
+
+function get(path, callback) {
+var xhr = new XMLHttpRequest();
+xhr.open("GET", path, true);
+xhr.setRequestHeader('Content-Type', 'application/json');
+xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+    if (this.status == 200) {
+        callback(this.responseText);
+    }
+};
+xhr.send();
+}
+
+function updateTodos() {
+get("listtodos.php", function(data) {
+var result = JSON.parse(data);
+var outHTML = ["", "", "", ""];
+allTodos = result;
+
+for (var i = 0; i < result.length; i++) {
+var todo = result[i];
+outHTML[todo.state] += '<a href="#" class="list-group-item" data-toggle="modal" data-target="#myModal" onclick="moreInfo(' + todo.id + ');">' + (todo.encrypted? '???' : todo.name) + '</a>'
+}
+
+document.getElementById("todo-type-0").innerHTML = outHTML[0];
+document.getElementById("todo-type-1").innerHTML = outHTML[1];
+document.getElementById("todo-type-2").innerHTML = outHTML[2];
+document.getElementById("todo-type-3").innerHTML = outHTML[3];
+});
+}
+
+		function moreInfo(id) {
+get("moreInfo.php?id="+id, function(data) {
+var result = JSON.parse(data);
+currTodo = result;
+
+document.getElementById("todo-moretitle").innerHTML = result.name;
+document.getElementById("todo-moreinfo").innerHTML = result.desc;
+if (!isLogin) {document.getElementById("editbtn").style.display = "none"; return;}
+document.getElementById("editbtn").style.display = "inline-block";
+document.getElementById("editbtn").addEventListener("click", function(){
+editTodo(id);
+});
+});
+			
+		}
+
+
+function tryAuth () {
+$.post("/auth.php",{username: document.getElementById("login-username").value, password: document.getElementById("login-password").value}, function(str, error){
+var result = (str);
+if (result.status) {
+document.getElementById("need-login").style.display = "none";
+document.getElementById("need-logout").style.display = "block";
+document.getElementById("login-error").style.display = "none";
+document.getElementById("login-username-name").innerHTML = document.getElementById("login-username").value;
+updateTodos();
+isLogin = true;
+document.getElementById("login-username").value = "";
+password: document.getElementById("login-password").value = "";
+account_info();
+} else {
+addAlert("Error logging in: " + result.msg);
+}
+});
+}
+
+function account_info() {
+get("/is_login.php", function(result) {
+var r = JSON.parse(result);
+if (r.status == 0) {
+document.getElementById("need-login").style.display = "none";
+document.getElementById("need-logout").style.display = "block";
+document.getElementById("login-error").style.display = "none";
+document.getElementById("login-username-name").innerHTML = r.username;
+document.getElementById("login-username-id").innerHTML = r.uid;
+updateTodos();
+isLogin = true;
+idAdmin = r.is_admin == 1;
+}
+});
+}
+
+(function() {
+
+account_info();
+
+document.getElementById("need-login-authbtn").addEventListener("click", function(){
+tryAuth();
+});
+
+document.getElementById("create-todo").addEventListener("click", function(){
+editTodoID = -1;
+document.getElementById("edit-title").value = "";
+document.getElementById("edit-contents").value = "";
+});
+
+document.getElementById("need-logout-logoutbtn").addEventListener("click", function(){
+$.post("/auth.php",{mode:"logout"}, function(str, error){
+document.getElementById("need-login").style.display = "block";
+document.getElementById("need-logout").style.display = "none";
+document.getElementById("login-error").style.display = "none";
+updateTodos();
+isLogin = false;
+isAdmin = false;
+myID = 0;
+});
+});
+
+updateTodos();
+})();
+
+$('.loginformcontrol').on('keydown', function (e) {
+    if ((e.which == 13)&&!isLogin) {
+        tryAuth ();
+        return false;
+     }
+});
+
+	</script>
+</body>
+</html>
