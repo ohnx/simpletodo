@@ -17,22 +17,41 @@ if ($conn->connect_error) {
     die('{"msg":"Connection failed: ' . $conn->connect_error . '"}');
 } 
 
-$sql = "SELECT security, creator FROM todo_items WHERE id = " . intval($_POST['id']);
-$result = $conn->query($sql);
-
-$sqlUpdate = "DELETE FROM `todo_items` WHERE  `id` = " . intval($_POST['id']);
-
-if ($result->num_rows > 0) {
-    // output data of each row
-    while($row = $result->fetch_assoc()) {
-        if ($_SESSION['user_is_admin'] || (($perms & $row['security']) == $row['security']) && ($row['creator'] == $_SESSION['user_id'])) {
-// user has perms to do this
-$result2 = $conn->query($sqlUpdate);
-$conn->close();
-die('{"msg":"ok"}');
-	}
+$sql = "";
+if (!$_SESSION['user_is_admin']) {
+    // first see what tags this user has access to
+    if ($_SESSION['user_id'] <= 0) {
+        $_SESSION['user_id'] = 0;
     }
+    
+    // look up userid in tags
+    $sql = "SELECT tag_id, access_level FROM todo_perms WHERE user_id in (" . $_SESSION['user_id'] . ", 0)";
+    $result = $conn->query($sql);
+    $accesses = array();
+    
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            if ($row['access_level'] > 0) {
+                $accesses[] = $row['tag_id'];
+            }
+        }
+    } else {
+        $conn->close();
+        die('{"msg":"error"}');
+    }
+    $sql = "DELETE FROM todo_items WHERE id = " . intval($_POST['id']) . " AND tag_id in (".implode(",", $accesses).")";
+} else {
+    // admin bypass
+    $sql = "DELETE FROM todo_items WHERE id = " . intval($_POST['id']);
 }
+
+if (!$_SESSION['user_is_admin'] && count($accesses) == 0) {
+    die('{"msg":"error"}');
+}
+
+// delete where the id is right, but also where the user can access.
+$result = $conn->query($sql);
+die('{"msg":"ok"}');
 $conn->close();
 ?>
 {"msg":"error"}

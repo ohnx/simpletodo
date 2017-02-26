@@ -10,7 +10,7 @@ $mode = $_POST['mode'];
 
 if(isset($mode)) {
                 session_start();
-                $_SESSION['user_id'] = -1;
+                $_SESSION['user_id'] = 0;
                 $_SESSION['user_view_perms'] = 0;
                 $_SESSION['user_is_admin'] = 0;
                 $_SESSION['user_name'] = "";
@@ -26,7 +26,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 } 
 
-$sql = 'SELECT id,username,password,salt,permissions,admin FROM todo_users WHERE username = "' . $name .'"';
+$sql = 'SELECT id,username,password,salt,admin FROM todo_users WHERE username = "' . $name .'"';
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {

@@ -16,6 +16,7 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <style>body { padding-right: 0 !important; /* fix weird issue where body gets padding sometimes */ } </style>
 </head>
 
 <body>
@@ -36,10 +37,10 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="#">About</a>
+                        <a href="https://masonx.ca/">About</a>
                     </li>
                     <li>
-                        <a href="#">Contact</a>
+                        <a href="https://masonx.ca/">Contact</a>
                     </li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right" id="adminbar" style="display: none;">
@@ -97,6 +98,10 @@
             	<br />
             	You are logged in as <b id="login-username-name">xX_GenericUsername_Xx</b>. (User id <b id="login-username-id">9001</b>)<br />
             	<br />
+                <div class="checkbox">
+  <label><input type="checkbox" value="yes" id="ShowOtherUsersTodos" checked onclick="ShowOtherUsersTodos_tgl()">Show other users' todos</label>
+</div>
+<br />
                 <div class="text-right">
                     <a class="btn btn-success" href="#" role="button" id="create-todo" data-toggle="modal" data-target="#editModal">Create a todo item</a>
                     <a class="btn btn-primary" href="#" role="button" id="need-logout-logoutbtn">Log out</a>
@@ -161,16 +166,16 @@
           			<input class="modal-title form-control" id="edit-title" value="asdf" />
         		</div>
         		<div class="modal-body">
+                <select id="tag-id" class="form-control">
+</select><br />
           			<textarea id="edit-contents" class="form-control">asdf</textarea><br />
 <select id="edit-state" class="form-control">
     <option value="0">Idea</option>
     <option value="1">In Progress</option>
     <option value="2">Doing soon</option>
     <option value="3">Paused</option>
- </select>
-<div class="checkbox">
-  <label><input type="checkbox" value="yes" id="edit-ispublic">Public</label>
-</div>
+ </select><br />
+ <input type="datetime-local" id="edit-duedate" class="form-control">
         		</div>
         		<div class="modal-footer">
           			<button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
@@ -182,14 +187,30 @@
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.4.4/randomColor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.6.3/showdown.min.js"></script>
 	<script>
 var isLogin = false;
 var isAdmin = false;
+var showOtherUsersTodos = true;
 var myID = 0;
 var editTodoID = 0;
+var tagLookup;
 
 var allTodos;
 var currTodo;
+
+var tagLookupColours = {};
+
+var converter = new showdown.Converter({noHeaderId: true});
+
+function getTagColour(id) {
+    if (tagLookupColours.hasOwnProperty('tag-'+id)) {
+    } else {
+        tagLookupColours['tag-'+id] = randomColor({luminosity: 'dark'});
+    }
+    return tagLookupColours['tag-'+id];
+}
 
 function addAlert(msg) {
 var theID = Math.floor(Math.random() * 10000);
@@ -201,9 +222,16 @@ element.parentNode.removeChild(element);
 }, 3000);
 }
 
+function ShowOtherUsersTodos_tgl() {
+    showOtherUsersTodos = document.getElementById('ShowOtherUsersTodos').checked;
+    updateHTML();
+}
+
 function saveTodo() {
-$.post("/update_todo.php",
-{id: editTodoID, name:document.getElementById("edit-title").value, desc: document.getElementById("edit-contents").value, public: document.getElementById("edit-ispublic").checked, update_security: document.getElementById("edit-ispublic").checked, state: document.getElementById("edit-state").value},
+$.post("/api/update_todo.php",
+{id: editTodoID, name:document.getElementById("edit-title").value, desc: document.getElementById("edit-contents").value,
+tag_id: document.getElementById("tag-id").value, state: document.getElementById("edit-state").value,
+duedate: document.getElementById("edit-duedate").value},
 function(str, error) {
 var result = str;
 if (result.msg.indexOf("error") < 0) {
@@ -215,8 +243,20 @@ addAlert("Failed to save your edits.<br />Check if you have permissions to edit 
 });
 }
 
+function updateTags() {
+get("/api/mytags.php", function(result) {
+var r = JSON.parse(result);
+tagLookup = r;
+var d = "";
+for (var i = 0; i < r.length - 1; i++) {
+    d += "<option value='" + r[i].id + "'>" + r[i].name + "</option>\n";
+}
+document.getElementById("tag-id").innerHTML = d;
+});
+}
+
 function deleteTodo() {
-$.post("/delete_todo.php",
+$.post("/api/delete_todo.php",
 {id: editTodoID},
 function(str, error) {
 var result = str;
@@ -237,6 +277,9 @@ return;
 document.getElementById("edit-title").value = currTodo.name;
 document.getElementById("edit-contents").value = currTodo.desc;
 document.getElementById("edit-state").value = currTodo.state;
+document.getElementById("tag-id").value = currTodo.tag_id;
+document.getElementById("edit-duedate").value = currTodo.duedate;
+
 editTodoID = id;
 $('#editModal').modal('show');
 }
@@ -254,31 +297,39 @@ xhr.onreadystatechange = function () {
 xhr.send();
 }
 
-function updateTodos() {
-get("listtodos.php", function(data) {
-var result = JSON.parse(data);
+function updateHTML() {
 var outHTML = ["", "", "", ""];
-allTodos = result;
 
-for (var i = 0; i < result.length; i++) {
-var todo = result[i];
-outHTML[todo.state] += '<a href="#" class="list-group-item" data-toggle="modal" data-target="#myModal" onclick="moreInfo(' + todo.id + ');">' + (todo.encrypted? '???' : todo.name) + '</a>'
+for (var i = 0; i < allTodos.length; i++) {
+var todo = allTodos[i];
+if (showOtherUsersTodos || myID == todo.creator) {
+    outHTML[todo.state] += '<a href="#" class="list-group-item" data-toggle="modal" data-target="#myModal" style="border: 1px solid ' + getTagColour(todo.tag_id)
+    +';" onclick="moreInfo(' + todo.id + ');">' + (todo.encrypted? '???' : todo.name) + '</a>'
+}
 }
 
 document.getElementById("todo-type-0").innerHTML = outHTML[0];
 document.getElementById("todo-type-1").innerHTML = outHTML[1];
 document.getElementById("todo-type-2").innerHTML = outHTML[2];
 document.getElementById("todo-type-3").innerHTML = outHTML[3];
+}
+
+function updateTodos() {
+get("/api/listtodos.php", function(data) {
+var result = JSON.parse(data);
+allTodos = result;
+
+updateHTML();
 });
 }
 
 		function moreInfo(id) {
-get("moreInfo.php?id="+id, function(data) {
+get("/api/moreInfo.php?id="+id, function(data) {
 var result = JSON.parse(data);
 currTodo = result;
 
 document.getElementById("todo-moretitle").innerHTML = result.name;
-document.getElementById("todo-moreinfo").innerHTML = result.desc;
+document.getElementById("todo-moreinfo").innerHTML = converter.makeHtml(result.desc);
 if (!isLogin) {document.getElementById("editbtn").style.display = "none"; return;}
 document.getElementById("editbtn").style.display = "inline-block";
 document.getElementById("editbtn").addEventListener("click", function(){
@@ -290,7 +341,7 @@ editTodo(id);
 
 
 function tryAuth () {
-$.post("/auth.php",{username: document.getElementById("login-username").value, password: document.getElementById("login-password").value}, function(str, error){
+$.post("/api/auth.php",{username: document.getElementById("login-username").value, password: document.getElementById("login-password").value}, function(str, error){
 var result = (str);
 if (result.status) {
 document.getElementById("need-login").style.display = "none";
@@ -309,7 +360,7 @@ addAlert("Error logging in: " + result.msg);
 }
 
 function account_info() {
-get("/is_login.php", function(result) {
+get("/api/is_login.php", function(result) {
 var r = JSON.parse(result);
 if (r.status == 0) {
 document.getElementById("need-login").style.display = "none";
@@ -317,11 +368,13 @@ document.getElementById("need-logout").style.display = "block";
 document.getElementById("login-error").style.display = "none";
 document.getElementById("login-username-name").innerHTML = r.username;
 document.getElementById("login-username-id").innerHTML = r.uid;
+myID = r.uid;
 updateTodos();
 isLogin = true;
 idAdmin = r.is_admin == 1;
 }
 });
+updateTags();
 }
 
 (function() {
@@ -339,13 +392,15 @@ document.getElementById("edit-contents").value = "";
 });
 
 document.getElementById("need-logout-logoutbtn").addEventListener("click", function(){
-$.post("/auth.php",{mode:"logout"}, function(str, error){
+$.post("/api/auth.php",{mode:"logout"}, function(str, error){
 document.getElementById("need-login").style.display = "block";
 document.getElementById("need-logout").style.display = "none";
 document.getElementById("login-error").style.display = "none";
+document.getElementById('ShowOtherUsersTodos').checked = true;
 updateTodos();
 isLogin = false;
 isAdmin = false;
+showOtherUsersTodos = true;
 myID = 0;
 });
 });
